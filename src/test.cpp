@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <typeinfo>
 #include <vector>
 
 #include <omp.h>
@@ -48,7 +49,8 @@ struct results_t {
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const results_t<T>& r) {
-    os << r.params;
+    os << "type:" << typeid(T).name();
+    os << " " << r.params;
     for (const auto& kv : r.map) {
         os << std::endl << "  " << std::hexfloat << kv.first << " (" << kv.second << ")";
     }
