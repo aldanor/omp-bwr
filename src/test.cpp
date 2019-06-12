@@ -45,33 +45,41 @@ template<typename T>
 struct results_t {
     params_t params;
     std::map<T, int> map;
+    double elapsed;
 };
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const results_t<T>& r) {
     os << "type:" << typeid(T).name();
     os << " " << r.params;
+    os << " elapsed:" << (r.elapsed * 1e3) << "ms";
+    os << std::hexfloat;
     for (const auto& kv : r.map) {
-        os << std::endl << "  " << std::hexfloat << kv.first << " (" << kv.second << ")";
+        os << std::endl << "  " << kv.first << " (" << kv.second << ")";
     }
+    os << std::defaultfloat;
     return os;
 }
 
 template<typename T>
 results_t<T> run_many(const params_t& params, int n_trials) {
     std::map<T, int> map;
+    auto t0 = omp_get_wtime();
     for (int i = 0; i < n_trials; ++i) {
         map[run<T>(params)]++;
     }
-    return {params, map};
+    auto t1 = omp_get_wtime();
+    return {params, map, t1 - t0};
 }
 
 int main() {
-    params_t p1 {12345, 4, true};
-    params_t p2 {12345, 4, false};
-    int n = 10000;
-    std::cout << run_many<float>(p1, n) << std::endl;
-    std::cout << run_many<double>(p1, n) << std::endl;
-    std::cout << run_many<float>(p2, n) << std::endl;
-    std::cout << run_many<double>(p2, n) << std::endl;
+    const int size = 234567;
+    const int n = 1000;
+    for (int num_threads : {1, 2, 3, 4}) {
+        std::cout << "---" << std::endl;
+        for (bool dynamic : {false, true}) {
+            std::cout << run_many<float>({size, num_threads, dynamic}, n) << std::endl;
+            std::cout << run_many<double>({size, num_threads, dynamic}, n) << std::endl;;
+        }
+    }
 }
